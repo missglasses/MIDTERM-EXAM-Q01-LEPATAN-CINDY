@@ -52,8 +52,17 @@
             <button type="submit">Add</button>
         </form>
 
-        <p id="message"></p>
-        <button type="button" class="secondary" id="showAll">Show All</button>
+   
+    </section>
+
+ <section>
+      <h2>Find Room by ID</h2>
+      <form id="searchForm">
+        <input type="number" id="searchId" placeholder="Enter room ID" required />
+        <button type="submit">Search</button>
+      <button type="button" class="secondary" id="showAll">Show All</button>
+           <p id="message"></p>
+      </form>
     </section>
 
     <section>
@@ -188,6 +197,24 @@
                 loadReservations();
             }
         );
+
+    //serach by id
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('searchId').value;
+      try {
+        const res = await fetch(`${API}/${id}`);
+        const data = await res.json();
+        if (!res.ok) {
+          renderProducts([]);
+          return showMessage(data.error, true);
+        }
+        renderProducts([data]);
+        showMessage(`Found product #${id}`);
+      } catch (err) {
+        showMessage('Search failed', true);
+      }
+    });
 
         //del reserv
         tableBody.addEventListener("click", async function(e) {
