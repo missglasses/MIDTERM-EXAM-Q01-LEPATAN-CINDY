@@ -22,13 +22,5 @@
     "date": "10-27-2026",
     "start_time": "9:30",
     "end_time": "10:30"
-  },
-  {
-    "id": 4,
-    "room": "201",
-    "reserved_by": "Patrick Star",
-    "date": "2026-10-27",
-    "start_time": "07:30",
-    "end_time": "08:30"
   }
 ]

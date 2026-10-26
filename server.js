@@ -8,7 +8,7 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// read all reservations from data.json
+// read all from data file
 function readData() {
     return JSON.parse(
         fs.readFileSync(path.join(__dirname, "data.json"), "utf8")
@@ -25,16 +25,16 @@ function writeData(data) {
 
 //landing pge
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+     res.sendFile(path.join(__dirname, "index.html"));
 });
 
 //display all
 app.get("/api/reservations", (req, res) => {
-    const data = readData();
-    res.json(data);
+     const data = readData();
+     res.json(data);
 });
 
-// display bnyu id 
+// display by id 
 app.get("/api/reservations/:id", (req, res) => {
     const id = Number(req.params.id);
     const data = readData();
@@ -42,15 +42,15 @@ app.get("/api/reservations/:id", (req, res) => {
     const reservation = data.find(r => r.id === id);
 
     if (!reservation) {
-        return res.status(404).json({
-         message: "Reservation not found"
+         return res.status(404).json({
+            message2: "Reservation not found"
         });
     }
 
     res.json(reservation);
 });
 
-//  new
+//  new res
 app.post("/api/reservations", (req, res) => {
     const { room, reserved_by, date, start_time, end_time } = req.body;
 
@@ -68,13 +68,13 @@ app.post("/api/reservations", (req, res) => {
         !end_time.trim()
     ) {
         return res.status(400).json({
-            message: "room, reserved_by, date, start_time and end_time are required"
+             message2: "room, reserved_by, date, start_time and end_time are required"
         });
     }
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return res.status(400).json({
-            message: "Follow format: YYYY-MM-DD"
+            message2: "Enter valid date format: (YYYY-MM-DD) "
         });
     }
 
@@ -85,7 +85,7 @@ app.post("/api/reservations", (req, res) => {
         parsedDate.toISOString().slice(0, 10) !== date
     ) {
         return res.status(400).json({
-            message: "Invalid reservation date"
+            message2: "Invalid reservation date"
         });
     }
 
@@ -95,8 +95,7 @@ app.post("/api/reservations", (req, res) => {
         start_time >= end_time
     ) {
         return res.status(400).json({
-            message: "Enter valid times in HH:MM format.",
-            color: "red"
+            message2: "Enter valid time format: (HH:MM)"
         });
     }
 
@@ -104,14 +103,14 @@ app.post("/api/reservations", (req, res) => {
 
     // logic if room is reserved
     const conflict = data.find(reservation =>
-         String(reservation.room) === String(room).trim() &&
+        String(reservation.room) === String(room).trim() &&
         reservation.date === date
     );
 
     if (conflict) {
         return res.status(409).json({
-            message: "This room is already reserved on this date",
-            conflictingReservation: conflict
+             message2: "! This room is already reserved on this date",
+             conflictingReservation: conflict
         });
     }
 
@@ -129,25 +128,25 @@ app.post("/api/reservations", (req, res) => {
         end_time: end_time
     };
 
-        data.push(newReservation);
-        writeData(data);
+    data.push(newReservation);
+    writeData(data);
 
-        res.status(201).json({
-        message: "Reservation created successfully",
-        reservation: newReservation
+    res.status(201).json({
+         message1: "Reservation created successfully",
+         reservation: newReservation
     });
 });
 
 //delete servatiomn by id
 app.delete("/api/reservations/:id", (req, res) => {
-        const id = Number(req.params.id);
-        const data = readData();
+    const id = Number(req.params.id);
+    const data = readData();
 
-        const index = data.findIndex(r => r.id === id);
+    const index = data.findIndex(r => r.id === id);
 
     if (index === -1) {
         return res.status(404).json({
-            message: "Reservation not found"
+            message2: "Reservation not found"
         });
     }
 
@@ -156,7 +155,7 @@ app.delete("/api/reservations/:id", (req, res) => {
     writeData(data);
 
     res.json({
-        message: "Reservation deleted successfully",
+        message1: "Reservation deleted successfully",
         reservation: deleted
     });
 });
