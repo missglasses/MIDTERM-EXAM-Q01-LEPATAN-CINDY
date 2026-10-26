@@ -1,29 +1,168 @@
-/*
 
-Use the following required API structure:
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
 
-    GET /api/[resource] — retrieve all records
+const app = express();
+const PORT = 3000;
 
-    GET /api/[resource]/:id — retrieve one record by ID
+app.use(express.json());
 
-    POST /api/[resource] — insert a new record
+// read all reservations from data.json
+function readData() {
+    return JSON.parse(
+        fs.readFileSync(path.join(__dirname, "data.json"), "utf8")
+    );
+}
 
-    DELETE /api/[resource]/:id — delete a record by ID
+// input to data file
+function writeData(data) {
+    fs.writeFileSync(
+        path.join(__dirname, "data.json"),
+        JSON.stringify(data, null, 2)
+    );
+}
 
+//landing pge
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
 
-    Data Fields
+//display all
+app.get("/api/reservations", (req, res) => {
+    const data = readData();
+    res.json(data);
+});
 
-    id
+// display bnyu id 
+app.get("/api/reservations/:id", (req, res) => {
+    const id = Number(req.params.id);
+    const data = readData();
 
-    room
+    const reservation = data.find(r => r.id === id);
 
-    reserved_by
+    if (!reservation) {
+        return res.status(404).json({
+         message: "Reservation not found"
+        });
+    }
 
-    date
+    res.json(reservation);
+});
 
-    start_time
+//  new
+app.post("/api/reservations", (req, res) => {
+    const { room, reserved_by, date, start_time, end_time } = req.body;
 
-    end_time
+    if (
+        room === undefined ||
+        room === null ||
+        String(room).trim() === "" ||
+        typeof reserved_by !== "string" ||
+        reserved_by.trim() === "" ||
+        typeof date !== "string" ||
+        !date.trim() ||
+        typeof start_time !== "string" ||
+        !start_time.trim() ||
+        typeof end_time !== "string" ||
+        !end_time.trim()
+    ) {
+        return res.status(400).json({
+            message: "room, reserved_by, date, start_time and end_time are required"
+        });
+    }
 
-*/
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({
+            message: "Follow format: YYYY-MM-DD"
+        });
+    }
 
+    const parsedDate = new Date(`${date}T00:00:00Z`);
+
+    if (
+        Number.isNaN(parsedDate.getTime()) ||
+        parsedDate.toISOString().slice(0, 10) !== date
+    ) {
+        return res.status(400).json({
+            message: "Invalid reservation date"
+        });
+    }
+
+    if (
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(start_time) ||
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(end_time) ||
+        start_time >= end_time
+    ) {
+        return res.status(400).json({
+            message: "Enter valid times in HH:MM format.",
+            color: "red"
+        });
+    }
+
+    const data = readData();
+
+    // logic if room is reserved
+    const conflict = data.find(reservation =>
+         String(reservation.room) === String(room).trim() &&
+        reservation.date === date
+    );
+
+    if (conflict) {
+        return res.status(409).json({
+            message: "This room is already reserved on this date",
+            conflictingReservation: conflict
+        });
+    }
+
+    // gen new id
+    const newId = data.length
+        ? Math.max(...data.map(r => r.id)) + 1
+        : 1;
+
+    const newReservation = {
+        id: newId,
+        room: String(room).trim(),
+        reserved_by: reserved_by.trim(),
+        date: date,
+        start_time: start_time,
+        end_time: end_time
+    };
+
+        data.push(newReservation);
+        writeData(data);
+
+        res.status(201).json({
+        message: "Reservation created successfully",
+        reservation: newReservation
+    });
+});
+
+//delete servatiomn by id
+app.delete("/api/reservations/:id", (req, res) => {
+        const id = Number(req.params.id);
+        const data = readData();
+
+        const index = data.findIndex(r => r.id === id);
+
+    if (index === -1) {
+        return res.status(404).json({
+            message: "Reservation not found"
+        });
+    }
+
+    const deleted = data.splice(index, 1)[0];
+
+    writeData(data);
+
+    res.json({
+        message: "Reservation deleted successfully",
+        reservation: deleted
+    });
+});
+
+app.use(express.static(__dirname));
+
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+});

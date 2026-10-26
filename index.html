@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Room Reservation System</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        section {
+            margin-bottom: 25px;
+        }
+
+        input, button {
+            padding: 6px;
+            margin: 4px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 6px;
+            text-align: left;
+        }
+
+        #message {
+            color: green;
+        }
+
+        .delete {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Room Reservation System</h1>
+
+    <section>
+        <h2>Add Reservation</h2>
+
+        <form id="addForm">
+            <input type="text" id="room" placeholder="Room" required>
+            <input type="text" id="reserved_by" placeholder="Reserved By" required>
+            <input type="text" id="date" placeholder="Date (YYYY-MM-DD)" required>
+            <input type="text" id="start_time" placeholder="Start Time (HH:MM)" required>
+            <input type="text" id="end_time" placeholder="End Time (HH:MM)" required>
+            <button type="submit">Add</button>
+        </form>
+
+        <p id="message"></p>
+    </section>
+<!-- 
+    <section>
+        <form id="searchForm">
+
+            <button type="button" id="showAll">Show All</button>
+        </form>
+    </section> -->
+
+    <section>
+        <h2>Reservations</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Room</th>
+                    <th>Reserved By</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="tableBody"></tbody>
+        </table>
+    </section>
+
+    <script>
+        const API = "/api/reservations";
+
+        const tableBody = document.getElementById("tableBody");
+        const message = document.getElementById("message");
+
+        // displa messg
+
+    function showMessage(text, isError = false) {
+    message.textContent = text;
+    message.style.color = isError ? "red" : "green";
+}
+        //dsipl reserv
+        function displayReservations(reservations) {
+            tableBody.innerHTML = "";
+
+            if (reservations.length === 0) {
+                tableBody.innerHTML =
+                    "<tr><td colspan='7'>No reservations found.</td></tr>";
+                return;
+            }
+
+            reservations.forEach(function(r) {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${r.id}</td>
+                    <td></td>
+                    <td></td>
+                    <td>${r.date}</td>
+                    <td>${r.start_time}</td>
+                    <td>${r.end_time}</td>
+                    <td>
+                        <button class="delete" data-id="${r.id}">
+                            Delete
+                        </button>
+                    </td>
+                `;
+
+                row.children[1].textContent = r.room;
+                row.children[2].textContent = r.reserved_by;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        // get all reserv
+        async function loadReservations() {
+            try {
+                const response = await fetch(API);
+                const data = await response.json();
+
+                displayReservations(data);
+            } catch (error) {
+                showMessage("Cannot load reservations.");
+            }
+        }
+
+        // new reservation
+        document.getElementById("addForm").addEventListener("submit",
+            async function(e) {
+                e.preventDefault();
+
+                const reservation = {
+                    room: document.getElementById("room").value,
+                    reserved_by: document.getElementById("reserved_by").value,
+                    date: document.getElementById("date").value,
+                    start_time: document.getElementById("start_time").value,
+                    end_time: document.getElementById("end_time").value
+                };
+
+                try {
+                    const response = await fetch(API, {
+                    method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(reservation)
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        showMessage(data.message || "Failed to add reservation.");
+                        return;
+                    }
+
+                    showMessage("Reservation added successfully!");
+                    this.reset();
+                    loadReservations();
+
+                } catch (error) {
+                    showMessage("Cannot add reservation.");
+                }
+            }
+        );
+
+       
+        //displ all reserv
+        document.getElementById("showAll").addEventListener("click",
+            function() {
+                document.getElementById("searchId").value = "";
+                showMessage("");
+                loadReservations();
+            }
+        );
+
+        //del reserv
+        tableBody.addEventListener("click", async function(e) {
+            if (e.target.classList.contains("delete")) {
+                const id = e.target.dataset.id;
+
+                if (!confirm("Delete reservation #" + id + "?")) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(API + "/" + id, {
+                        method: "DELETE"
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        showMessage(data.message || "Delete failed.");
+                        return;
+                    }
+
+                    showMessage("Reservation deleted successfully!");
+                    loadReservations();
+
+                } catch (error) {
+                    showMessage("Cannot delete reservation.");
+                }
+            }
+        });
+
+        loadReservations();
+    </script>
+
+</body>
+</html>
