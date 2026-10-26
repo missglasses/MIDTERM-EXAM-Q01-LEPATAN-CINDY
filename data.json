@@ -1,0 +1,18 @@
+// Data Fields
+//     id
+//     room
+//     reserved_by
+//     date
+//     start_time
+//     end_time
+
+
+{
+    id: 1,
+    room: 001,
+    reserved_by: ,
+    date: ,
+    start_time,
+    end_time: 
+
+}
